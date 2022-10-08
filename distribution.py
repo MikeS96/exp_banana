@@ -33,7 +33,7 @@ class Agent:
                  r: float = 0.033,
                  l: float = 0.2,
                  arc: float = 1.0,
-                 rate: float = 1.0,
+                 rate: float = np.pi / 2,
                  v: float = 1.0,
                  mov: str = 'linear',
                  seed: int = 1234):
@@ -91,7 +91,7 @@ class Agent:
         return state
 
 
-def visualize_motion(trajectory: np.ndarray):
+def visualize_motion(trajectory: np.ndarray, mov: str):
     fig, ax = plt.subplots()
     # Plot trajectory
     ax.plot(trajectory[:, 0], trajectory[:, 1], ls='--', lw=3,
@@ -109,8 +109,8 @@ def visualize_motion(trajectory: np.ndarray):
     # Hide grid lines
     plt.legend(loc='upper left')
     plt.title('Robot trajectory sample', fontsize=22)
-    plt.ylim([-0.25, 0.25])
-    # plt.tight_layout()
+    bounds = [-0.25, 0.25] if mov == 'linear' else [-0.25, 1.1]
+    plt.ylim(bounds)
     plt.show()
 
 
@@ -119,10 +119,10 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: Agent):
     # Extract one noiseless trajectory and plot
     motion = agent.integrate_motion(D=0)
     ax.plot(motion[:, 0], motion[:, 1], ls='--', lw=3,
-            color=(0.75, 0.75, 0.75), label='Noiseless motion', zorder=0)
+            color=(0.75, 0.75, 0.75), label='Noiseless motion', zorder=2)
     # Plot trajectory
     ax.scatter(final_states[:, 0], final_states[:, 1], lw=2, marker='o',
-               color=(0.125, 0.4, 0.811), label='Final states', zorder=2)
+               color=(0.125, 0.4, 0.811), label='Final states', zorder=0)
     # Draw agent
     plt.hlines(0, 0, 0.025, colors=(1, 1, 1), alpha=1.0, lw=2.5, zorder=5)
     agent = plt.Circle((0, 0), 0.025, color=(1.0, 0.466, 0.0), alpha=1.0, lw=2, fill=False, zorder=10)
@@ -141,11 +141,12 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: Agent):
 
 
 def main():
+    mov = 'arc'
     # Create agent
-    agent = Agent(mov='linear')
+    agent = Agent(mov=mov)
     # Sample one trajectory and visualize
     trajectory = agent.integrate_motion()
-    visualize_motion(trajectory)
+    visualize_motion(trajectory, mov)
     # Integrate 10K times the trajectory
     n_trials = 2500
     last_state = np.zeros((n_trials, 3))
