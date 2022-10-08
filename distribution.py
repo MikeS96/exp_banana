@@ -6,13 +6,8 @@ import matplotlib.pyplot as plt
 
 matplotlib.use('TkAgg')
 
-
-def set_default(figsize=(10, 10), dpi=100):
-    plt.style.use(['dark_background', 'bmh'])
-    plt.rc('axes', facecolor='k')
-    plt.rc('figure', facecolor='k')
-    plt.rc('figure', figsize=figsize, dpi=dpi)
-
+from visualization import visualize_motion, visualize_k_motions, set_default
+from utils import compute_marginalize_cartesian
 
 set_default(figsize=(10, 6))
 
@@ -91,57 +86,8 @@ class Agent:
         return state
 
 
-def visualize_motion(trajectory: np.ndarray, mov: str):
-    fig, ax = plt.subplots()
-    # Plot trajectory
-    ax.plot(trajectory[:, 0], trajectory[:, 1], ls='--', lw=3,
-            color=(0.125, 0.4, 0.811), label='Trajectory', zorder=0)
-    # Draw agent
-    plt.hlines(0, 0, 0.025, colors=(1, 1, 1), alpha=1.0, lw=2.5, zorder=5)
-    agent = plt.Circle((0, 0), 0.025, color=(1.0, 0.466, 0.0), alpha=1.0, lw=2, fill=False, zorder=10)
-    ax.set_aspect(1)
-    ax.add_artist(agent)
-    # Miscellaneous
-    ax.legend()
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.legend()
-    # Hide grid lines
-    plt.legend(loc='upper left')
-    plt.title('Robot trajectory sample', fontsize=22)
-    bounds = [-0.25, 0.25] if mov == 'linear' else [-0.25, 1.1]
-    plt.ylim(bounds)
-    plt.show()
-
-
-def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: Agent):
-    fig, ax = plt.subplots()
-    # Extract one noiseless trajectory and plot
-    motion = agent.integrate_motion(D=0)
-    ax.plot(motion[:, 0], motion[:, 1], ls='--', lw=3,
-            color=(0.75, 0.75, 0.75), label='Noiseless motion', zorder=2)
-    # Plot trajectory
-    ax.scatter(final_states[:, 0], final_states[:, 1], lw=2, marker='o',
-               color=(0.125, 0.4, 0.811), label='Final states', zorder=0)
-    # Draw agent
-    plt.hlines(0, 0, 0.025, colors=(1, 1, 1), alpha=1.0, lw=2.5, zorder=5)
-    agent = plt.Circle((0, 0), 0.025, color=(1.0, 0.466, 0.0), alpha=1.0, lw=2, fill=False, zorder=10)
-    ax.set_aspect(1)
-    ax.add_artist(agent)
-    # Miscellaneous
-    ax.legend()
-    # Hide grid lines
-    ax.grid(False)
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    plt.legend(loc='upper left')
-    plt.title('Robot trajectory integrated {} times'.format(n_trials), fontsize=22)
-    plt.tight_layout()
-    plt.show()
-
-
 def main():
-    mov = 'arc'
+    mov = 'linear'
     # Create agent
     agent = Agent(mov=mov)
     # Sample one trajectory and visualize
@@ -152,8 +98,13 @@ def main():
     last_state = np.zeros((n_trials, 3))
     for i in range(n_trials):
         last_state[i] = agent.integrate_motion()[-1]
+
     # Visualize final states
     visualize_k_motions(last_state, n_trials, agent=agent)
+    # Compute mean and variance in cartesian coordinates
+    xy_mean, xy_cov = compute_marginalize_cartesian(last_state)
+    # Visualize final states with cartesian contours
+    visualize_k_motions(last_state, n_trials, agent=agent, mean_cartesian=xy_mean, cov_cartesian=xy_cov, sigmas=5)
 
 
 if __name__ == '__main__':
