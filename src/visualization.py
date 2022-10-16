@@ -4,15 +4,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from scipy.stats import multivariate_normal
+from scipy.interpolate import griddata
 
-from utils import ExpSE2, SE2
+from .utils import ExpSE2, SE2
 
 
 def set_default(figsize=(10, 10), dpi=100):
     plt.style.use(['dark_background', 'bmh'])
     plt.rc('axes', facecolor='k')
+    plt.rc('axes', titlesize=14)
+    plt.rc('axes', labelsize=14)
+    plt.rc('font', size=14)
     plt.rc('figure', facecolor='k')
     plt.rc('figure', figsize=figsize, dpi=dpi)
+    plt.rc('xtick', labelsize=14)
+    plt.rc('ytick', labelsize=14)
 
 
 def visualize_motion(trajectory: np.ndarray, mov: str):
@@ -71,8 +77,8 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
     ax.legend()
     # Hide grid lines
     ax.grid(False)
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
+    ax.set_xlabel('X', fontsize=18)
+    ax.set_ylabel('Y', fontsize=18)
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Car. coordinates'.format(n_trials), fontsize=22)
     plt.tight_layout()
@@ -85,21 +91,12 @@ def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int, agent: object,
     Visualize robot displacement in exponential coordinates with error curves
     """
     fig, ax = plt.subplots()
-    # Extract one noiseless trajectory and plot
-    motion = agent.integrate_motion(D=0)
-    ax.plot(motion[:, 0], motion[:, 1], ls='--', lw=3,
-            color=(0.75, 0.75, 0.75), label='Noiseless motion', zorder=2)
     # Compute exp coordinates of poses
     exp_poses = [ExpSE2(pose_matrix=g) for g in se2_poses]
     taus = np.asarray([t.tau for t in exp_poses])
     # Plot trajectory
     ax.scatter(taus[:, 0], taus[:, 1], lw=2, marker='o',
                color=(0.125, 0.4, 0.811), label='Final states Exp. coordinates', zorder=1)
-    # Draw agent
-    plt.hlines(0, 0, 0.025, colors=(1, 1, 1), alpha=1.0, lw=2.5, zorder=5)
-    agent = plt.Circle((0, 0), 0.025, color=(1.0, 0.466, 0.0), alpha=1.0, lw=2, fill=False, zorder=10)
-    ax.set_aspect(1)
-    ax.add_artist(agent)
     # Plot contours if provided
     if mean_exp is not None and cov_exp is not None:
         plot_contours_exp(se2_poses, mean_exp, cov_exp, sigmas, ax, taus=taus, cmap='cool')
@@ -107,8 +104,8 @@ def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int, agent: object,
     ax.legend()
     # Hide grid lines
     ax.grid(False)
-    ax.set_xlabel(r'$v_1$')
-    ax.set_ylabel(r'$v_2$')
+    ax.set_xlabel(r'$v_1$', fontsize=18)
+    ax.set_ylabel(r'$v_2$', fontsize=18)
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Exp coordinates'.format(n_trials), fontsize=22)
     plt.tight_layout()

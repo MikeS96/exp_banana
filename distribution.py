@@ -6,87 +6,13 @@ import matplotlib.pyplot as plt
 
 matplotlib.use('TkAgg')
 
-from visualization import visualize_motion, visualize_k_motions, visualize_k_motions_exp, set_default
-from utils import compute_marginalize_cartesian, compute_mean_exp, compute_cov_exp, SE2, ExpSE2
+from src.visualization import visualize_motion, visualize_k_motions, visualize_k_motions_exp, set_default
+from src.utils import compute_marginalize_cartesian, compute_mean_exp, compute_cov_exp, SE2, Agent
 
 set_default(figsize=(10, 6))
 
 
-class Agent:
-    """
-    args:
-        @param r: Radius of wheel
-        @param l: Baseline of the vehicle
-        @param arc: Arc of curvature
-        @param rate: Rate of spin
-        @param v: Linear speed of the agent
-        @param mov: Whether if displacement is along a straight line or an arc [linear, arc]
-        @param seed: Random generator seed
-    """
-
-    def __init__(self,
-                 r: float = 0.033,
-                 l: float = 0.2,
-                 arc: float = 1.0,
-                 rate: float = np.pi / 2,
-                 v: float = 1.0,
-                 mov: str = 'linear',
-                 seed: int = 1234):
-        self.r = r
-        self.l = l
-        self.arc = arc
-        self.rate = rate
-        self.v = v
-        self.mov = mov
-        self.rng = np.random.default_rng(seed)
-        # Compute wheel speed
-        if mov == 'linear':
-            self.w1 = self.w2 = self.v / self.r
-        elif mov == 'arc':
-            self.w1 = self.rate / self.r * (self.arc + (self.l / 2))
-            self.w2 = self.rate / self.r * (self.arc - (self.l / 2))
-        else:
-            raise NotImplementedError("Please select one valid motion -> linear or arc")
-
-    def integrate_motion(self,
-                         dt: float = 0.001,
-                         T: int = 1.0,
-                         D: int = 1.0):
-        """
-        Integrate stochastic process.
-
-        Args:
-            dt: Timestep
-            T: Duration of movement
-            D: Diffusion coefficient
-        """
-        # Number of integration steps
-        steps = int(T / dt)
-        # Init state of agent x=0, y=0, theta=0
-        state = np.zeros((steps, 3), dtype=float)
-        state[0] = np.asarray([0, 0, 0])
-        # Generate brownian noise
-        dw1 = self.rng.normal(loc=0, scale=np.sqrt(dt), size=steps)
-        dw2 = self.rng.normal(loc=0, scale=np.sqrt(dt), size=steps)
-        for step in range(1, steps):
-            state_t_1 = state[step - 1]
-            # Deterministic motion
-            det_motion = dt * np.asarray([(self.r / 2) * (self.w1 + self.w2) * np.cos(state_t_1[-1]),
-                                          (self.r / 2) * (self.w1 + self.w2) * np.sin(state_t_1[-1]),
-                                          (self.r / self.l) * (self.w1 - self.w2)])
-            # Stochastic motion
-            H = np.asarray([[(self.r / 2) * np.cos(state_t_1[-1]), (self.r / 2) * np.cos(state_t_1[-1])],
-                            [(self.r / 2) * np.sin(state_t_1[-1]), (self.r / 2) * np.sin(state_t_1[-1])],
-                            [self.r / self.l, -self.r / self.l]]) * np.sqrt(D)
-            stoch_motion = H @ np.asarray([[dw1[step]], [dw2[step]]]).squeeze()
-            # Compute delta motion
-            dx = det_motion + stoch_motion
-            # Compute total motion
-            state[step] = state_t_1 + dx
-        return state
-
-
-def main():
+def distribution():
     mov = 'arc'
     # Create agent
     agent = Agent(mov=mov)
@@ -121,4 +47,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    distribution()
