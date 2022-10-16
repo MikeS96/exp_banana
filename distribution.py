@@ -20,7 +20,7 @@ def distribution():
     trajectory = agent.integrate_motion()
     visualize_motion(trajectory, mov)
     # Integrate 10K times the trajectory
-    n_trials = 5000
+    n_trials = 10000
     last_state = np.zeros((n_trials, 3))
     for i in range(n_trials):
         last_state[i] = agent.integrate_motion(D=1)[-1]
@@ -40,7 +40,7 @@ def distribution():
     exp_mean = compute_mean_exp(group_poses)
     exp_cov = compute_cov_exp(group_poses, exp_mean)
     # Visualize Exp. distribution in Exp. coordiantes
-    visualize_k_motions_exp(group_poses, n_trials, agent=agent, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=3)
+    visualize_k_motions_exp(group_poses, n_trials, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=3)
     # Visualize Exp. distribution in Euc. coordinates
     visualize_k_motions(last_state, n_trials, agent=agent,
                         se2_poses=group_poses, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=5)

@@ -66,9 +66,9 @@ def uncertainty_propagation(agent: Agent, t: float, D: int, T: int = 1, mov: str
 
 def propagation():
     # Set Diffusion coefficient
-    D = 7
+    D = 1
     T = 1  # Total displacement time
-    mov = 'linear'
+    mov = 'arc'
     # Create agent
     agent = Agent(mov=mov)
     # Integrate 10K times the trajectory
@@ -85,7 +85,7 @@ def propagation():
     group_poses = [SE2(pose=p) for p in last_state]
     exp_mean, exp_cov = uncertainty_propagation(agent, t=T, D=D, T=T, mov=mov)
     # Visualize Exp. distribution in Exp. coordiantes
-    visualize_k_motions_exp(group_poses, n_trials, agent=agent, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=3)
+    visualize_k_motions_exp(group_poses, n_trials, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=3)
     # Visualize Exp. distribution in Euc. coordinates
     visualize_k_motions(last_state, n_trials, agent=agent,
                         se2_poses=group_poses, mean_exp=exp_mean, cov_exp=exp_cov, sigmas=5)

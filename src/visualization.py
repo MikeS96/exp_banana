@@ -85,7 +85,7 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
     plt.show()
 
 
-def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int, agent: object,
+def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int,
                             mean_exp: object = None, cov_exp: np.ndarray = None, sigmas: float = 2):
     """
     Visualize robot displacement in exponential coordinates with error curves
@@ -137,6 +137,43 @@ def plot_contours_cartesian(mean: np.ndarray,
     ax.contourf(x, y, z, zorder=3, cmap=cmap, alpha=0.3,
                 levels=[rv.pdf(np.asarray([(c * sigma_x) + mean_x,
                                            (c * sigma_y) + mean_y])) for c in [2.0, 1.5, 1.0, 0.5, 0.0]])
+
+
+def plot_contours_exp_sample(se2_poses: List[SE2],
+                             mean: object,
+                             cov: np.ndarray,
+                             sigmas: int,
+                             ax: object,
+                             cartesian_coordinates: Optional[List[np.ndarray]] = None,
+                             taus: Optional[List[np.ndarray]] = None,
+                             cmap: str = 'Reds'):
+    # Exp mean
+    exp_mean = ExpSE2(pose_matrix=mean)
+    # Obtain stdv around x-y
+    sigma_x, sigma_y = np.sqrt(cov[0, 0]), np.sqrt(cov[1, 1])
+    # Define Exp distribution
+    rv = multivariate_normal(mean=np.zeros(3), cov=cov)
+    # Sample exp distribution n times
+    samples_exp = rv.rvs(30000)
+    # Map all samples to SE(2)
+    cartesian_coordinates = list()
+    for s in samples_exp:
+        cartesian_coordinates.append(mean.compose(ExpSE2(tau=s).exp_max()).g[:2, -1])
+    cartesian_coordinates = np.asarray(cartesian_coordinates)
+    # Define marginal distribution for x-y in exp coordinates
+    rv = multivariate_normal(np.zeros(2), cov[:2, :2])
+    # Generate density for each point in grid - data is centered so mean is zero
+    # This is effectively computing the marginal v pdf without orientation
+    z = rv.pdf(samples_exp[:, :2])
+    if taus is not None:
+        # Uncenter exp samples
+        x, y = samples_exp[:, 0] + exp_mean.tau[0], samples_exp[:, 1] + exp_mean.tau[1]
+    elif cartesian_coordinates is not None:
+        x, y = cartesian_coordinates[:, 0], cartesian_coordinates[:, 1]
+    ax.tricontour(x, y, z, zorder=3, linewidths=0.5, colors='white', alpha=0.8,
+                  levels=[rv.pdf(np.asarray([c * sigma_x, c * sigma_y])) for c in [2.0, 1.5, 1.0, 0.5, 0.0]])
+    ax.tricontourf(x, y, z, zorder=3, cmap=cmap, alpha=0.3,
+                   levels=[rv.pdf(np.asarray([c * sigma_x, c * sigma_y])) for c in [2.0, 1.5, 1.0, 0.5, 0.0]])
 
 
 def plot_contours_exp(se2_poses: List[SE2],
