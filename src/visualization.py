@@ -72,7 +72,8 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
         plot_contours_cartesian(mean_cartesian, cov_cartesian, sigmas, ax, cmap="cool")
     # Plot exp contours if provided
     if mean_exp is not None and cov_exp is not None:
-        plot_contours_exp(se2_poses, mean_exp, cov_exp, sigmas, ax, cartesian_coordinates=final_states, cmap='cool')
+        # plot_contours_exp(se2_poses, mean_exp, cov_exp, sigmas, ax, cartesian_coordinates=final_states, cmap='cool')
+        plot_contours_exp_sample(mean_exp, cov_exp, ax, plot_cartesian=True, cmap='cool')
     # Miscellaneous
     ax.legend()
     # Hide grid lines
@@ -81,11 +82,13 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
     ax.set_ylabel('Y', fontsize=18)
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Car. coordinates'.format(n_trials), fontsize=22)
+    plt.xlim([-0.1, final_states[:, 0].max() + 0.1])
+    plt.ylim([final_states[:, 1].min() - 0.1, final_states[:, 1].max() + 0.1])
     plt.tight_layout()
     plt.show()
 
 
-def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int,
+def visualize_k_motions_exp(se2_poses: List[SE2], n_trials: int,
                             mean_exp: object = None, cov_exp: np.ndarray = None, sigmas: float = 2):
     """
     Visualize robot displacement in exponential coordinates with error curves
@@ -99,6 +102,7 @@ def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int,
                color=(0.125, 0.4, 0.811), label='Final states Exp. coordinates', zorder=1)
     # Plot contours if provided
     if mean_exp is not None and cov_exp is not None:
+        # plot_contours_exp_sample(mean_exp, cov_exp, ax, plot_cartesian=False, cmap='cool')
         plot_contours_exp(se2_poses, mean_exp, cov_exp, sigmas, ax, taus=taus, cmap='cool')
     # Miscellaneous
     ax.legend()
@@ -108,6 +112,8 @@ def visualize_k_motions_exp(se2_poses: np.ndarray, n_trials: int,
     ax.set_ylabel(r'$v_2$', fontsize=18)
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Exp coordinates'.format(n_trials), fontsize=22)
+    plt.xlim([-0.1, taus[:, 0].max() + 0.1])
+    plt.ylim([taus[:, 1].min() - 0.1, taus[:, 1].max() + 0.1])
     plt.tight_layout()
     plt.show()
 
@@ -139,13 +145,10 @@ def plot_contours_cartesian(mean: np.ndarray,
                                            (c * sigma_y) + mean_y])) for c in [2.0, 1.5, 1.0, 0.5, 0.0]])
 
 
-def plot_contours_exp_sample(se2_poses: List[SE2],
-                             mean: object,
+def plot_contours_exp_sample(mean: object,
                              cov: np.ndarray,
-                             sigmas: int,
                              ax: object,
-                             cartesian_coordinates: Optional[List[np.ndarray]] = None,
-                             taus: Optional[List[np.ndarray]] = None,
+                             plot_cartesian: bool = False,
                              cmap: str = 'Reds'):
     # Exp mean
     exp_mean = ExpSE2(pose_matrix=mean)
@@ -154,7 +157,7 @@ def plot_contours_exp_sample(se2_poses: List[SE2],
     # Define Exp distribution
     rv = multivariate_normal(mean=np.zeros(3), cov=cov)
     # Sample exp distribution n times
-    samples_exp = rv.rvs(30000)
+    samples_exp = rv.rvs(50000)
     # Map all samples to SE(2)
     cartesian_coordinates = list()
     for s in samples_exp:
@@ -165,11 +168,11 @@ def plot_contours_exp_sample(se2_poses: List[SE2],
     # Generate density for each point in grid - data is centered so mean is zero
     # This is effectively computing the marginal v pdf without orientation
     z = rv.pdf(samples_exp[:, :2])
-    if taus is not None:
+    if plot_cartesian:
+        x, y = cartesian_coordinates[:, 0], cartesian_coordinates[:, 1]
+    else:
         # Uncenter exp samples
         x, y = samples_exp[:, 0] + exp_mean.tau[0], samples_exp[:, 1] + exp_mean.tau[1]
-    elif cartesian_coordinates is not None:
-        x, y = cartesian_coordinates[:, 0], cartesian_coordinates[:, 1]
     ax.tricontour(x, y, z, zorder=3, linewidths=0.5, colors='white', alpha=0.8,
                   levels=[rv.pdf(np.asarray([c * sigma_x, c * sigma_y])) for c in [2.0, 1.5, 1.0, 0.5, 0.0]])
     ax.tricontourf(x, y, z, zorder=3, cmap=cmap, alpha=0.3,

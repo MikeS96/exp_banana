@@ -13,7 +13,7 @@ set_default(figsize=(10, 6))
 
 
 def distribution():
-    mov = 'arc'
+    mov = 'linear'
     # Create agent
     agent = Agent(mov=mov)
     # Sample one trajectory and visualize
