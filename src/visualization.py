@@ -83,7 +83,7 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Car. coordinates'.format(n_trials), fontsize=22)
     plt.xlim([-0.1, final_states[:, 0].max() + 0.1])
-    plt.ylim([final_states[:, 1].min() - 0.1, final_states[:, 1].max() + 0.1])
+    plt.ylim([- 0.1, final_states[:, 1].max() + 0.1])
     plt.tight_layout()
     plt.show()
 
