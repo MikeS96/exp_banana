@@ -1,13 +1,11 @@
-from typing import List
-
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
+import argparse
 
 matplotlib.use('TkAgg')
 
-from src.visualization import visualize_motion, visualize_k_motions, visualize_k_motions_exp, set_default
-from src.utils import compute_marginalize_cartesian, compute_mean_exp, compute_cov_exp, SE2, Agent
+from src.visualization import visualize_k_motions, visualize_k_motions_exp, set_default
+from src.utils import SE2, Agent
 
 set_default(figsize=(10, 6))
 
@@ -65,14 +63,22 @@ def uncertainty_propagation(agent: Agent, t: float, D: int, T: int = 1, mov: str
 
 
 def propagation():
-    # Set Diffusion coefficient
-    D = 1
+    # Read args
+    parser = argparse.ArgumentParser(description='Trainer for NCLT pointclouds.')
+    parser.add_argument('--D', help='Diffusion coefficient', action='store', default=1, type=int)
+    parser.add_argument('--mov', help='Type of movement, options are linear and arc',
+                        action='store', choices=['linear', 'arc'], default='linear')
+    parser.add_argument('--n_trials', help='Number of times trajectory is integrated',
+                        action='store', default=10000, type=int)
+    args = parser.parse_args()
+    # Hyperparams
+    mov = args.mov
+    D = args.D
+    n_trials = args.n_trials
+
     T = 1  # Total displacement time
-    mov = 'arc'
     # Create agent
     agent = Agent(mov=mov)
-    # Integrate 10K times the trajectory
-    n_trials = 10000
     last_state = np.zeros((n_trials, 3))
     for i in range(n_trials):
         last_state[i] = agent.integrate_motion(D=D)[-1]

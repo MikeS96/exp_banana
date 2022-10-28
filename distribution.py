@@ -1,8 +1,6 @@
-from typing import List
-
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
+import argparse
 
 matplotlib.use('TkAgg')
 
@@ -13,17 +11,26 @@ set_default(figsize=(10, 6))
 
 
 def distribution():
-    mov = 'linear'
+    # Read args
+    parser = argparse.ArgumentParser(description='Trainer for NCLT pointclouds.')
+    parser.add_argument('--D', help='Diffusion coefficient', action='store', default=1, type=int)
+    parser.add_argument('--mov', help='Type of movement, options are linear and arc',
+                        action='store', choices=['linear', 'arc'], default='linear')
+    parser.add_argument('--n_trials', help='Number of times trajectory is integrated',
+                        action='store', default=10000, type=int)
+    args = parser.parse_args()
+    # Hyperparams
+    mov = args.mov
+    D = args.D
+    n_trials = args.n_trials
     # Create agent
     agent = Agent(mov=mov)
     # Sample one trajectory and visualize
     trajectory = agent.integrate_motion()
     visualize_motion(trajectory, mov)
-    # Integrate 10K times the trajectory
-    n_trials = 10000
     last_state = np.zeros((n_trials, 3))
     for i in range(n_trials):
-        last_state[i] = agent.integrate_motion(D=1)[-1]
+        last_state[i] = agent.integrate_motion(D=D)[-1]
 
     # Visualize final states
     visualize_k_motions(last_state, n_trials, agent=agent)

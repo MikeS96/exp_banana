@@ -166,9 +166,12 @@ class ExpSE2:
     def log_map(self):
         # Compute logmap SO(2)
         theta = np.arctan2(self.g[1, 0], self.g[0, 0])
-        # Compute Jacobian SE(2)
-        jac = (np.sin(theta) / theta) * np.eye(2) + \
-              ((1 - np.cos(theta)) / theta) * self.skew_symmetric_so2(1)
+        # Edge case when theta is zero
+        if theta != 0.0:
+            jac = (np.sin(theta) / theta) * np.eye(2) + \
+                  ((1 - np.cos(theta)) / theta) * self.skew_symmetric_so2(1)
+        else:
+            jac = np.eye(2)
         # Compute translation component
         rho = (np.linalg.inv(jac) @ self.g[:2, -1]).squeeze()
         tau = np.asarray([rho[0], rho[1], theta])
@@ -194,6 +197,8 @@ def compute_marginalize_cartesian(samples: np.ndarray):
     # Compute covariance
     centered = samples - mean
     cov = (1 / samples.shape[0]) * np.sum(centered[:, :, np.newaxis] @ centered[:, np.newaxis, :], axis=0)  # E.q (25)
+    print('Cartesian mean', mean)
+    print('Cartesian Cov', cov)
     # Marginalize heading
     marginal_cov = cov[:2, :2]
     marginal_mean = mean[:2]
@@ -214,6 +219,8 @@ def compute_mean_exp(samples: SE2, n_iter: int = 5):
             tau_sum += ExpSE2(pose_matrix=m_1.compose(g)).tau  # E.q (26)
         tau_sum /= N
         m = m.compose(ExpSE2(tau=tau_sum).exp_max())
+
+    print('Exp mean', m)
     return m
 
 
@@ -231,4 +238,5 @@ def compute_cov_exp(samples: SE2, mean: SE2):
     y = np.asarray(y)
     # Compute covariance matrix 
     cov = (1 / N) * np.sum(y[:, :, np.newaxis] @ y[:, np.newaxis, :], axis=0)  # E.q (27)
+    print('Exp cov', cov)
     return cov

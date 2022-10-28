@@ -2,9 +2,7 @@ from typing import List, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.tri as tri
 from scipy.stats import multivariate_normal
-from scipy.interpolate import griddata
 
 from .utils import ExpSE2, SE2
 
@@ -36,6 +34,8 @@ def visualize_motion(trajectory: np.ndarray, mov: str):
     ax.add_artist(agent)
     # Miscellaneous
     ax.legend()
+    # Hide grid lines
+    ax.grid(False)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.legend()
@@ -83,7 +83,7 @@ def visualize_k_motions(final_states: np.ndarray, n_trials: int, agent: object,
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Car. coordinates'.format(n_trials), fontsize=22)
     plt.xlim([-0.1, final_states[:, 0].max() + 0.1])
-    plt.ylim([- 0.1, final_states[:, 1].max() + 0.1])
+    plt.ylim([min(final_states[:, 1].min() - 0.1, -0.2), final_states[:, 1].max() + 0.1])
     plt.tight_layout()
     plt.show()
 
@@ -112,8 +112,6 @@ def visualize_k_motions_exp(se2_poses: List[SE2], n_trials: int,
     ax.set_ylabel(r'$v_2$', fontsize=18)
     plt.legend(loc='upper left')
     plt.title('Robot trajectory integrated {} times in Exp coordinates'.format(n_trials), fontsize=22)
-    plt.xlim([-0.1, taus[:, 0].max() + 0.1])
-    plt.ylim([taus[:, 1].min() - 0.1, taus[:, 1].max() + 0.1])
     plt.tight_layout()
     plt.show()
 
